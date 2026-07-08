@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id         String     @id // UUID matching Supabase auth user id
+  email      String     @unique
+  name       String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  tasks      Task[]
+  categories Category[]
+  activities Activity[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  color     String?  // Hex or Tailwind class
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?   @db.Text
+  priority    Priority  @default(MEDIUM)
+  status      Status    @default(TODO)
+  dueDate     DateTime?
+  isArchived  Boolean   @default(false)
+  labels      String[]  // Postgres scalar array of strings
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  action    String   // e.g. "task_created", "status_updated"
+  details   String?  // Description of what changed
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId    String?
+  createdAt DateTime @default(now())
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Status {
+  TODO
+  IN_PROGRESS
+  DONE
+}
